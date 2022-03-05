@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+#include <string>
 #include <mpi.h>
 #include <kombyne_execution.h>
 #include <kombyne_data.h>
@@ -28,10 +30,17 @@ class Kombyne
 
   private:
     inline void addMesh(void* mesh);
-    inline kb_var_handle getNodes(void* mesh);
-    inline kb_var_handle buildConnectivity(void* mesh);
-    inline kb_var_handle flagGhostNodes(void* mesh);
-    inline kb_var_handle flagGhostCells(void* mesh);
+    inline void getNodes(void* mesh);
+    inline void buildConnectivity(void* mesh);
+    inline void flagGhostNodes(void* mesh);
+    inline void flagGhostCells(void* mesh);
+    inline std::vector<int64_t> boundaryTags(void* mesh);
+    inline void addTriangles(void* mesh, std::vector<int64_t> tris,
+                             kb_bnd_handle hbnd, std::string bc);
+    inline void addQuads(void* mesh, std::vector<int64_t> quads,
+                         kb_bnd_handle hbnd, std::string bc);
+    inline void addBoundary(void* mesh, int64_t tag);
+    inline void addBoundaries(void* mesh);
     inline void addSolution();
 
   private:
