@@ -53,21 +53,25 @@ void Kombyne::addMesh(void* mesh)
 
   kb_var_handle hc = getNodes(mesh);
   kb_var_handle hconn = buildConnectivity(mesh);
+  kb_var_handle hgn = flagGhostsNodes(mesh);
+  kb_var_handle hgc = flagGhostsCells(mesh);
 
   m_ug = kb_ugrid_alloc();
-  error = kb_ugrid_set_coords(m_ug, hc)
+  error = kb_ugrid_set_coords(m_ug, hc);
   error = kb_ugrid_add_cells_interleaved(m_ug, hconn);
+  error = kb_ugrid_set_ghost_nodes(m_ug, hgn);
+  error = kb_ugrid_set_ghost_cells(m_ug, hgc);
 }
 
 kb_var_handle Kombyne::getNodes(void* mesh)
 {
   int error;
 
-  int64_t nnodes = tinf_mesh_node_count(mesh, &error);
+  int64_t nnodes01 = tinf_mesh_node_count(mesh, &error);
 
-  double* x = malloc(nnodes*sizeof(double));
-  double* y = malloc(nnodes*sizeof(double));
-  double* z = malloc(nnodes*sizeof(double));
+  double* x = malloc(nnodes01*sizeof(double));
+  double* y = malloc(nnodes01*sizeof(double));
+  double* z = malloc(nnodes01*sizeof(double));
   if( NULL == x || NULL == y || NULL == z ) {
     if( z ) free(z);
     if( y ) free(y);
@@ -75,13 +79,14 @@ kb_var_handle Kombyne::getNodes(void* mesh)
     return NULL;
   }
 
-  error = tinf_mesh_nodes_coordinates(mesh, TINF_DOUBLE, 0, nnodes, x, y, z);
+  error = tinf_mesh_nodes_coordinates(mesh, TINF_DOUBLE, 0, nnodes01, x, y, z);
 
   int stride = sizeof(double);
+  int n01 = (int)nnodes01;
   kb_var_handle hc = kb_var_alloc();
-  error = kb_var_set_arrayd(hc, 0, KB_MEMORY_OWN, (int)nnodes, 0, stride, x);
-  error = kb_var_set_arrayd(hc, 1, KB_MEMORY_OWN, (int)nnodes, 0, stride, y);
-  error = kb_var_set_arrayd(hc, 2, KB_MEMORY_OWN, (int)nnodes, 0, stride, z);
+  error = kb_var_set_arrayd(hc, 0, KB_MEMORY_OWN, n01, 0, stride, x);
+  error = kb_var_set_arrayd(hc, 1, KB_MEMORY_OWN, n01, 0, stride, y);
+  error = kb_var_set_arrayd(hc, 2, KB_MEMORY_OWN, n01, 0, stride, z);
 
   return hc;
 }
@@ -152,6 +157,63 @@ kb_var_handle Kombyne::buildConnectivity(void* mesh)
   error = kb_var_seti(hconn, KB_MEMORY_OWN, 1, lconn, cellconnects);
 
   return hconn;
+}
+
+kb_var_handle Kombyne::flagGhostsNodes(void* mesh)
+{
+  int error;
+
+  int64_t nnodes01 = tinf_mesh_node_count(mesh, &error);
+
+  int32_t* ghost;
+ 
+  if( (ghost=(int32_t*)malloc(nnodes01*sizeof(int32_t))) == NULL) {
+    return NULL;
+  }
+
+  int64_t part = tinf_mesh_partition_id(mesh, &error);
+
+  for( int64_t i=0; i<nnodes01; ++i ) {
+    ghost[i] = (int)(part == tinf_mesh_node_owner(mesh, i, &error));
+  }
+
+  kb_var_handle hg = kb_var_alloc();
+  error = kb_var_seti(hg, KB_MEMORY_OWN, 1, (int)nnodes01, ghost);
+
+  return hg;
+}
+
+kb_var_handle Kombyne::flagGhostsCells(void* mesh)
+{
+  int error;
+
+  int32_t* ghost;
+ 
+  if( (ghost=(int32_t*)malloc(m_ncell01*sizeof(int32_t))) == NULL) {
+    return NULL;
+  }
+
+  int64_t part = tinf_mesh_partition_id(mesh, &error);
+
+  int64_t ncell01 = 0;
+
+  for( int64_t i=0; i<tinf_mesh_element_count(mesh,&error); ++i ) {
+    switch( tinf_mesh_element_type(mesh, i, &error) ) {
+      case TINF_TRI_3:
+      case TINF_QUAD_4:
+      case TINF_TETRA_4:
+      case TINF_PYRA_5:
+      case TINF_PENTA_6:
+      case TINF_HEXA_8:
+        ghost[ncell01++] = (int)(part == tinf_mesh_element_owner(mesh, i, &error));
+        break;
+    }
+  }
+
+  kb_var_handle hg = kb_var_alloc();
+  error = kb_var_seti(hg, KB_MEMORY_OWN, 1, (int)m_ncell01, ghost);
+
+  return hg;
 }
 
 void Kombyne::addSolution()
