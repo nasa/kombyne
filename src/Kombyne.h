@@ -30,6 +30,8 @@ class Kombyne
     inline void addMesh(void* mesh);
     inline kb_var_handle getNodes(void* mesh);
     inline kb_var_handle buildConnectivity(void* mesh);
+    inline kb_var_handle flagGhostNodes(void* mesh);
+    inline kb_var_handle flagGhostCells(void* mesh);
     inline void addSolution();
 
   private:

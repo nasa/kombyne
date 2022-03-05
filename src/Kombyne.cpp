@@ -53,8 +53,8 @@ void Kombyne::addMesh(void* mesh)
 
   kb_var_handle hc = getNodes(mesh);
   kb_var_handle hconn = buildConnectivity(mesh);
-  kb_var_handle hgn = flagGhostsNodes(mesh);
-  kb_var_handle hgc = flagGhostsCells(mesh);
+  kb_var_handle hgn = flagGhostNodes(mesh);
+  kb_var_handle hgc = flagGhostCells(mesh);
 
   m_ug = kb_ugrid_alloc();
   error = kb_ugrid_set_coords(m_ug, hc);
@@ -159,7 +159,7 @@ kb_var_handle Kombyne::buildConnectivity(void* mesh)
   return hconn;
 }
 
-kb_var_handle Kombyne::flagGhostsNodes(void* mesh)
+kb_var_handle Kombyne::flagGhostNodes(void* mesh)
 {
   int error;
 
@@ -183,7 +183,7 @@ kb_var_handle Kombyne::flagGhostsNodes(void* mesh)
   return hg;
 }
 
-kb_var_handle Kombyne::flagGhostsCells(void* mesh)
+kb_var_handle Kombyne::flagGhostCells(void* mesh)
 {
   int error;
 
