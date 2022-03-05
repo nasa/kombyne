@@ -27,12 +27,21 @@ class Kombyne
     virtual ~Kombyne();
 
   private:
+    inline void addMesh(void* mesh);
+    inline kb_var_handle getNodes(void* mesh);
+    inline kb_var_handle buildConnectivity(void* mesh);
+    inline void addSolution();
+
+  private:
     void* m_problem;
     void* m_mesh;
     void* m_soln;
     void* m_comm;
     MPI_Comm m_split;
     kb_role m_newrole;
+
+    int64_t m_ncell01;
+    kb_ugrid_handle m_ug;
 };
 
 } // namespace VisKombyne
