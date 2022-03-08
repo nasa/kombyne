@@ -5,15 +5,37 @@
 #include <exception>
 #include <cstdlib>
 #include <string>
+#include <sstream>
 #include <algorithm>
 
 #include "Kombyne.h"
+#include "tinf_mesh.h"
+#include "tinf_solution.h"
 
 using VisKombine;
 
+#define KB_CHECK_SUCCESS(error, msg) ({ \
+  if( KB_RETURN_ERROR == error ) { \
+    std::stringstream ss; \
+    ss << error; \
+    std::string message = "ERROR - " + std::string(msg) + ": " + ss.str(); \
+    throw std::runtime_error(message.c_str()); \
+  } \
+})
+
+#define TINF_CHECK_SUCCESS(error, msg) ({ \
+  if( TINF_SUCCESS == error ) { \
+    std::stringstream ss; \
+    ss << error; \
+    std::string message = std::string(msg) + ": " + ss.str(); \
+    throw std::runtime_error(message.c_str()); \
+  } \
+})
+
 Kombyne::Kombyne(void* problem, void* mesh, void* soln, void* comm,
                  int32_t sims) : m_problem(problem), m_mesh(mesh),
-                                 m_soln(soln) m_comm(comm)
+                                 m_soln(soln), m_comm(comm),
+                                 m_hc(KB_HANDLE_NULL)
 {
   int32_t err;
   MPI_Comm mpi_comm;
@@ -39,8 +61,9 @@ Kombyne::Kombyne(void* problem, void* mesh, void* soln, void* comm,
                 m_split,
                 m_newrole);
 
-  addMesh();
-  addSolution();
+  addMesh(mesh);
+  addPipeline();
+  addFields(mesh, soln);
 }
 
 Kombyne::~Kombyne()
@@ -50,9 +73,6 @@ Kombyne::~Kombyne()
 
 void Kombyne::addMesh(void* mesh)
 {
-  /*Interleaved ugrid connectivity */
-  int error;
-
   m_ug = kb_ugrid_alloc();
 
   getNodes(mesh);
@@ -67,6 +87,7 @@ void Kombyne::getNodes(void* mesh)
   int error;
 
   int64_t nnodes01 = tinf_mesh_node_count(mesh, &error);
+  TINF_CHECK_STATUS(error, "Could not get number of mesh nodes");
 
   double* x = malloc(nnodes01*sizeof(double));
   double* y = malloc(nnodes01*sizeof(double));
@@ -79,25 +100,35 @@ void Kombyne::getNodes(void* mesh)
   }
 
   error = tinf_mesh_nodes_coordinates(mesh, TINF_DOUBLE, 0, nnodes01, x, y, z);
+  TINF_CHECK_STATUS(error, "Could not get mesh coordinates");
 
   int stride = sizeof(double);
   int n01 = (int)nnodes01;
   kb_var_handle hc = kb_var_alloc();
   error = kb_var_set_arrayd(hc, 0, KB_MEMORY_OWN, n01, 0, stride, x);
+  KB_CHECK_STATUS(error, "Could not set mesh x array");
   error = kb_var_set_arrayd(hc, 1, KB_MEMORY_OWN, n01, 0, stride, y);
+  KB_CHECK_STATUS(error, "Could not set mesh y array");
   error = kb_var_set_arrayd(hc, 2, KB_MEMORY_OWN, n01, 0, stride, z);
+  KB_CHECK_STATUS(error, "Could not set mesh z array");
 
   error = kb_ugrid_set_coords(m_ug, hc);
+  KB_CHECK_STATUS(error, "Could not set mesh coordinates");
 }
 
 void Kombyne::buildConnectivity(void* mesh)
 {
+  /*Interleaved ugrid connectivity */
   int32_t       error;
 
   int64_t ntet  = tinf_mesh_element_type_count(mesh, TINF_TETRA_4, &error);
+  TINF_CHECK_STATUS(error, "Could not get number of Tets");
   int64_t npry  = tinf_mesh_element_type_count(mesh, TINF_PYRA_5, &error);
+  TINF_CHECK_STATUS(error, "Could not get number of Pyramids");
   int64_t nprz  = tinf_mesh_element_type_count(mesh, TINF_PENTA_6, &error);
+  TINF_CHECK_STATUS(error, "Could not get number of Prisms");
   int64_t nhex  = tinf_mesh_element_type_count(mesh, TINF_HEXA_8, &error);
+  TINF_CHECK_STATUS(error, "Could not get number of Hexes");
 
   int32_t* cellconnects;
   if( (cellconnects=malloc(5*ntet+6*npyr+7*nprz+9*nhex)) == NULL ) {
@@ -126,24 +157,28 @@ void Kombyne::buildConnectivity(void* mesh)
       case TINF_TETRA_4:
         cellconnects[lconn++] = KB_CELLTYPE_TET;
         error = tinf_mesh_element_nodes(mesh, i, &cellconnects[lconn]);
+        TINF_CHECK_STATUS(error, "Could not get Tet connectivity");
         lconn += 4;
         m_ncell01++;
         break;
       case TINF_PYRA_5:
         cellconnects[lconn++] = KB_CELLTYPE_PYR;
         error = tinf_mesh_element_nodes(mesh, i, &cellconnects[lconn]);
+        TINF_CHECK_STATUS(error, "Could not get Pyramid connectivity");
         lconn += 5;
         m_ncell01++;
         break;
       case TINF_PENTA_6:
         cellconnects[lconn++] = KB_CELLTYPE_WEDGE;
         error = tinf_mesh_element_nodes(mesh, i, &cellconnects[lconn]);
+        TINF_CHECK_STATUS(error, "Could not get Prism connectivity");
         lconn += 6;
         m_ncell01++;
         break;
       case TINF_HEXA_8:
         cellconnects[lconn++] = KB_CELLTYPE_HEX;
         error = tinf_mesh_element_nodes(mesh, i, &cellconnects[lconn]);
+        TINF_CHECK_STATUS(error, "Could not get Hex connectivity");
         lconn += 8;
         m_ncell01++;
         break;
@@ -152,8 +187,10 @@ void Kombyne::buildConnectivity(void* mesh)
 
   kb_var_handle hconn = kb_var_alloc();
   error = kb_var_seti(hconn, KB_MEMORY_OWN, 1, lconn, cellconnects);
+  KB_CHECK_STATUS(error, "Could not create cell connectivity array");
 
   error = kb_ugrid_add_cells_interleaved(m_ug, hconn);
+  KB_CHECK_STATUS(error, "Could not add mesh cells");
 }
 
 void Kombyne::flagGhostNodes(void* mesh)
@@ -161,6 +198,7 @@ void Kombyne::flagGhostNodes(void* mesh)
   int error;
 
   int64_t nnodes01 = tinf_mesh_node_count(mesh, &error);
+  TINF_CHECK_STATUS(error, "Could not get mesh node count");
 
   int32_t* ghost;
  
@@ -169,15 +207,19 @@ void Kombyne::flagGhostNodes(void* mesh)
   }
 
   int64_t part = tinf_mesh_partition_id(mesh, &error);
+  TINF_CHECK_STATUS(error, "Could not get mesh partition Id");
 
   for( int64_t i=0; i<nnodes01; ++i ) {
     ghost[i] = (int)(part == tinf_mesh_node_owner(mesh, i, &error));
+    TINF_CHECK_STATUS(error, "Could not get node owner");
   }
 
   kb_var_handle hg = kb_var_alloc();
   error = kb_var_seti(hg, KB_MEMORY_OWN, 1, (int)nnodes01, ghost);
+  KB_CHECK_STATUS(error, "Could not create Ghost nodes array");
 
   error = kb_ugrid_set_ghost_nodes(m_ug, hg);
+  KB_CHECK_STATUS(error, "Could not set Ghost nodes");
 }
 
 void Kombyne::flagGhostCells(void* mesh)
@@ -191,6 +233,7 @@ void Kombyne::flagGhostCells(void* mesh)
   }
 
   int64_t part = tinf_mesh_partition_id(mesh, &error);
+  TINF_CHECK_STATUS(error, "Could not get mesh partition Id");
 
   int64_t ncell01 = 0;
 
@@ -203,14 +246,17 @@ void Kombyne::flagGhostCells(void* mesh)
       case TINF_PENTA_6:
       case TINF_HEXA_8:
         ghost[ncell01++] = (int)(part == tinf_mesh_element_owner(mesh, i, &error));
+        TINF_CHECK_STATUS(error, "Could not get cell owner");
         break;
     }
   }
 
   kb_var_handle hg = kb_var_alloc();
   error = kb_var_seti(hg, KB_MEMORY_OWN, 1, (int)m_ncell01, ghost);
+  KB_CHECK_STATUS(error, "Could not create Ghost cells array");
 
   error = kb_ugrid_set_ghost_cells(m_ug, hg);
+  KB_CHECK_STATUS(error, "Could not set Ghost cells");
 }
 
 std::vector<int64_t> Kombyne::boundaryTags(void* mesh,
@@ -225,6 +271,7 @@ std::vector<int64_t> Kombyne::boundaryTags(void* mesh,
       case TINF_TRI_3:
       case TINF_QUAD_4:
         v[j++] = tinf_mesh_element_tag(mesh, i, &error);
+        TINF_CHECK_STATUS(error, "Could not get boundary tag");
         break;
     }
   }
@@ -246,7 +293,9 @@ void Kombyne::addTriangles(void* mesh, std::vector<int64_t> tris,
 
     kb_var_handle ht = kb_var_alloc();
     error = kb_var_seti(ht, KB_MEMORY_OWN, 1, tris.size(), t)
+    KB_CHECK_STATUS(error, "Could not set Triangle cell array");
     error = kb_bnd_add_cells(hbnd, KB_CELLTYPE_TRI, ht, bc.c_str());
+    KB_CHECK_STATUS(error, "Could not set Triangle cells");
   }
 }
 
@@ -260,7 +309,9 @@ void Kombyne::addQuads(void* mesh, std::vector<int64_t> quads,
 
     kb_var_handle hq = kb_var_alloc();
     error = kb_var_seti(hq, KB_MEMORY_OWN, 1, quads.size(), q)
+    KB_CHECK_STATUS(error, "Could not set Quad cell array");
     error = kb_bnd_add_cells(hbnd, KB_CELLTYPE_QUAD, hq, bc.c_str());
+    KB_CHECK_STATUS(error, "Could not add Quad cells");
   }
 
 }
@@ -279,11 +330,13 @@ void Kombyne::addBoundary(void* mesh, int64_t tag)
       case TINF_TRI_3:
         if( tinf_mesh_element_tag(mesh, i, &error) == tag ) {
           error = tinf_mesh_element_nodes(mesh, i, nodes);
+          TINF_CHECK_STATUS(error, "Could not get Triangle element nodes");
           tris.insert(tris.end(), nodes, nodes+3);
         }
       case TINF_QUAD_4:
         if( tinf_mesh_element_tag(mesh, i, &error) == tag ) {
           error = tinf_mesh_element_nodes(mesh, i, nodes);
+          TINF_CHECK_STATUS(error, "Could not get Quad element nodes");
           quads.insert(quads.end(), nodes, nodes+4);
         }
         break;
@@ -303,6 +356,7 @@ void Kombyne::addBoundary(void* mesh, int64_t tag)
   addQuads(mesh, quads, hbnd, bc);
 
   error = kb_ugrid_set_boundaries(m_ug, hbnd)
+  KB_CHECK_STATUS(error, "Could not set boundaries");
 }
 
 void Kombyne::addBoundaries(void* mesh)
@@ -310,7 +364,9 @@ void Kombyne::addBoundaries(void* mesh)
   int error;
 
   int64_t ntri  = tinf_mesh_element_type_count(mesh, TINF_TRI_3, &error);
+  TINF_CHECK_STATUS(error, "Could not get Triangle element count");
   int64_t nquad = tinf_mesh_element_type_count(mesh, TINF_QUAD_4, &error);
+  TINF_CHECK_STATUS(error, "Could not get Quad element count");
 
   std::vector tags = boundaryTags(mesh, ntri, nquad);
 
@@ -320,6 +376,76 @@ void Kombyne::addBoundaries(void* mesh)
   }
 }
 
-void Kombyne::addSolution()
+void Kombyne::addPipelineCollection()
 {
+  int error;
+
+  m_hp = kb_pipeline_collection_alloc();
+  error = kb_pipeline_collection_set_filename(m_hp, "kombyne.json");
+  error = kb_pipeline_collection_initialize(m_hp);
+  KB_CHECK_STATUS(error, "Could not initialize pipeline");
+}
+
+void Kombyne::addPipelineData()
+{
+  int error;
+
+  kb_pipeline_data_handle m_hpd = kb_pipeline_data_alloc();
+
+  int32_t domain;
+  int32_t ndomains;
+  int32_t timestep;
+  double time;
+  error = kb_pipeoine_data_add(m_hpd, domain, ndomains, timestep, time, m_ug);
+  KB_CHECK_STATUS(error, "Could not add pipeline data");
+
+  int32_t promises = KB_PROMISE_STATIC_FIELDS; 
+//if( !moving_grid && !deform_mesh )
+//  promises |= KB_PROMISE_STATIC_GRID;
+  error = kb_pipeline_data_set_promises(m_hpd, promises);
+  KB_CHECK_STATUS(error, "Could not set pipeline promises");
+}
+
+void Kombyne::execute()
+{
+  int error;
+
+  error = kb_simulation_execute(m_hp, m_hpd, m_hc);
+  KB_CHECK_STATUS(error, "Could not execute pipeline");
+}
+
+void Kombyne::addPipeline()
+{
+  addPipelineCollection();
+  addPipelineData();
+  execute();
+}
+
+void Kombyne::addFields(void* mesh, void* soln)
+{
+  int error;
+
+  int64_t n_outputs;
+  const char** names;
+  const enum TINF_DATA_TYPE* datatype;
+  error = tinf_solution_get_nodal_output_names(soln, &n_outputs,
+                                               &name, &datatype);
+  TINF_CHECK_SUCCESS(error, "Failed to retrieve Solver outputs");
+
+  kb_fields_handle hfield = kb_fields_alloc();
+  int64_t nnodes01 = tinf_mesh_node_count(mesh, &error);
+  TINF_CHECK_SUCCESS(error, "Failed to retrieve mesh size");
+
+  for( int i=0, j=0; i<n_outputs; ++i ) {
+    double* values = malloc(nnodes01*sizeof(double));
+    error = tinf_solution_get_outputs_at_nodes(soln, datatype[j], 0, nnodes01,
+                                               1, &name[j], values);
+    TINF_CHECK_SUCCESS(error, "Failed to retrieve Solver output values");
+
+    kb_var_handle hvar = kb_var_alloc();
+    error = kb_var_setf(hvar, KB_MEM_OWN, 1, nnodes01, values);
+    error = kb_fields_add_var(hfield, name[j++], KB_CENTERING_POINTS, hvar);
+  }
+
+  error = kb_ugrid_add_fields(m_ug, hfield);
 }

@@ -41,7 +41,11 @@ class Kombyne
                          kb_bnd_handle hbnd, std::string bc);
     inline void addBoundary(void* mesh, int64_t tag);
     inline void addBoundaries(void* mesh);
-    inline void addSolution();
+    inline void addPipelineCollection();
+    inline void addPipelineData();
+    inline void execute();
+    inline void addPipeline();
+    inline void addFields();
 
   private:
     void* m_problem;
@@ -53,6 +57,9 @@ class Kombyne
 
     int64_t m_ncell01;
     kb_ugrid_handle m_ug;
+    kb_pipeline_collection_handle m_hp;
+    kb_pipeline_data_handle m_hpd;
+    kb_controls_handle m_hpc;
 };
 
 } // namespace VisKombyne
