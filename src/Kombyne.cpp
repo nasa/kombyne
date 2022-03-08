@@ -399,7 +399,13 @@ void Kombyne::addPipelineCollection()
   int error;
 
   m_hp = kb_pipeline_collection_alloc();
-  error = kb_pipeline_collection_set_filename(m_hp, "kombyne.json");
+
+  if( (const char* filename = std::getenv("KOMBYNE_PIPELINE")) ) {
+    error = kb_pipeline_collection_set_filename(m_hp, filename);
+  } else {
+    error = kb_pipeline_collection_set_filename(m_hp, "kombyne.yaml");
+  }
+  
   error = kb_pipeline_collection_initialize(m_hp);
   KB_CHECK_STATUS(error, "Could not initialize pipeline");
 }
