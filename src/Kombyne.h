@@ -45,7 +45,8 @@ class Kombyne
     inline void addPipelineData(void* prob);
     inline void execute();
     inline void addPipeline(void* prob);
-    inline void addFields(void* mesh, void* soln);
+    inline double rms(int64_t npoints, double* values);
+    inline void addFields(void* soln, int64_t npoints);
 
   private:
     void* m_problem;

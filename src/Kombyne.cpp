@@ -4,6 +4,7 @@
 
 #include <exception>
 #include <cstdlib>
+#include <cstring>
 #include <string>
 #include <sstream>
 #include <algorithm>
@@ -33,17 +34,30 @@ using VisKombine;
   } \
 })
 
+class Sample
+{
+  public:
+    Sample(std::string label, double s) : m_label(label), m_sample(s) {}
+
+    inline std::string label() { return m_label; }
+    inline double sample() { return m_sample; }
+
+  private:
+    std::string m_label;
+    double m_sample;
+};
+
 Kombyne::Kombyne(void* problem, void* mesh, void* soln, void* comm,
                  int32_t sims) : m_problem(problem), m_mesh(mesh),
                                  m_soln(soln), m_comm(comm),
                                  m_hc(KB_HANDLE_NULL)
 {
-  int32_t err;
+  int32_t error;
   MPI_Comm mpi_comm;
   kb_role role;
 
-  mpi_comm = MPI_Comm_f2c(tinf_iris_get_mpi_fcomm(comm,&err));
-  nprocs = tinf_iris_number_of_processes(comm, &err);
+  mpi_comm = MPI_Comm_f2c(tinf_iris_get_mpi_fcomm(comm,&error));
+  nprocs = tinf_iris_number_of_processes(comm, &error);
 
   if( sims == anals ) {
     role = KB_ROLE_SIMULATION_AND_ANALYSIS,
@@ -62,9 +76,12 @@ Kombyne::Kombyne(void* problem, void* mesh, void* soln, void* comm,
                 m_split,
                 m_newrole);
 
+  int64_t nnodes01 = tinf_mesh_node_count(mesh, &error);
+  TINF_CHECK_SUCCESS(error, "Failed to retrieve mesh size");
+
   addMesh(mesh);
   addPipeline(prob);
-  addFields(mesh, soln);
+  addFields(soln, nnodes01);
 }
 
 Kombyne::~Kombyne()
@@ -432,7 +449,19 @@ void Kombyne::addPipeline(void* prob)
   execute();
 }
 
-void Kombyne::addFields(void* mesh, void* soln)
+double Kombyne::rms(int64_t npoints, double* values)
+{
+  double rms = 0.0;
+
+  for( int i=0; i<npoints; ++i ) {
+    rms += values[i] * values[i];
+  }
+  rms = sqrt(rms/(double)npoints);
+
+  return rms;
+}
+
+void Kombyne::addFields(void* soln, int64_t npoints)
 {
   int error;
 
@@ -444,19 +473,31 @@ void Kombyne::addFields(void* mesh, void* soln)
   TINF_CHECK_SUCCESS(error, "Failed to retrieve Solver outputs");
 
   kb_fields_handle hfield = kb_fields_alloc();
-  int64_t nnodes01 = tinf_mesh_node_count(mesh, &error);
-  TINF_CHECK_SUCCESS(error, "Failed to retrieve mesh size");
+
+  std::vector<Sample> sample;
 
   for( int i=0, j=0; i<n_outputs; ++i ) {
-    double* values = malloc(nnodes01*sizeof(double));
-    error = tinf_solution_get_outputs_at_nodes(soln, datatype[j], 0, nnodes01,
+    double* values = malloc(npoints*sizeof(double));
+    error = tinf_solution_get_outputs_at_nodes(soln, datatype[j], 0, npoints,
                                                1, &name[j], values);
     TINF_CHECK_SUCCESS(error, "Failed to retrieve Solver output values");
 
+    if( strncmp(name[j],"Residual",8) ) {
+      sample.push_back(Sample(name[j], rms(npoints, values)));
+    }
+
     kb_var_handle hvar = kb_var_alloc();
-    error = kb_var_setf(hvar, KB_MEM_OWN, 1, nnodes01, values);
+    error = kb_var_setf(hvar, KB_MEM_OWN, 1, npoints, values);
+    KB_CHECK_STATUS(error, "Could not create field data variable");
     error = kb_fields_add_var(hfield, name[j++], KB_CENTERING_POINTS, hvar);
+    KB_CHECK_STATUS(error, "Could not add field data");
   }
 
   error = kb_ugrid_add_fields(m_ug, hfield);
+  KB_CHECK_STATUS(error, "Could not add fields to mesh");
+
+  for( int i=0; i<sample.size(); ++i ) {
+    error = kb_add_sample(sample.label().c_str(), sample.sample());
+    KB_CHECK_STATUS(error, "Could not add sample to mesh");
+  }
 }
