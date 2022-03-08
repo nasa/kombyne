@@ -11,6 +11,7 @@
 #include "Kombyne.h"
 #include "tinf_mesh.h"
 #include "tinf_solution.h"
+#include "pancake_cxx/Problem.h"
 
 using VisKombine;
 
@@ -62,7 +63,7 @@ Kombyne::Kombyne(void* problem, void* mesh, void* soln, void* comm,
                 m_newrole);
 
   addMesh(mesh);
-  addPipeline();
+  addPipeline(prob);
   addFields(mesh, soln);
 }
 
@@ -386,7 +387,7 @@ void Kombyne::addPipelineCollection()
   KB_CHECK_STATUS(error, "Could not initialize pipeline");
 }
 
-void Kombyne::addPipelineData()
+void Kombyne::addPipelineData(void* prob)
 {
   int error;
 
@@ -399,9 +400,19 @@ void Kombyne::addPipelineData()
   error = kb_pipeoine_data_add(m_hpd, domain, ndomains, timestep, time, m_ug);
   KB_CHECK_STATUS(error, "Could not add pipeline data");
 
+  Problem problem(prob);
+
+  bool moving_grid = false;
+  prob.value("global:moving_grid",&moving_grid);
+
+  bool grid_motion_attribute = false;
+//prob.value("grid_motion:grid_motion_attribute",&grid_motion_attribute);
+
   int32_t promises = KB_PROMISE_STATIC_FIELDS; 
-//if( !moving_grid && !deform_mesh )
-//  promises |= KB_PROMISE_STATIC_GRID;
+
+  if( !moving_grid && !grid_motion_attribute )
+    promises |= KB_PROMISE_STATIC_GRID;
+
   error = kb_pipeline_data_set_promises(m_hpd, promises);
   KB_CHECK_STATUS(error, "Could not set pipeline promises");
 }
@@ -414,10 +425,10 @@ void Kombyne::execute()
   KB_CHECK_STATUS(error, "Could not execute pipeline");
 }
 
-void Kombyne::addPipeline()
+void Kombyne::addPipeline(void* prob)
 {
   addPipelineCollection();
-  addPipelineData();
+  addPipelineData(prob);
   execute();
 }
 

@@ -42,10 +42,10 @@ class Kombyne
     inline void addBoundary(void* mesh, int64_t tag);
     inline void addBoundaries(void* mesh);
     inline void addPipelineCollection();
-    inline void addPipelineData();
+    inline void addPipelineData(void* prob);
     inline void execute();
-    inline void addPipeline();
-    inline void addFields();
+    inline void addPipeline(void* prob);
+    inline void addFields(void* mesh, void* soln);
 
   private:
     void* m_problem;
