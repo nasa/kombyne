@@ -89,6 +89,14 @@ Kombyne::~Kombyne()
   kb_finalize();
 }
 
+void Kombyne::execute()
+{
+  int error;
+
+  error = kb_simulation_execute(m_hp, m_hpd, m_hc);
+  KB_CHECK_STATUS(error, "Could not execute pipeline");
+}
+
 void Kombyne::addMesh(void* mesh)
 {
   m_ug = kb_ugrid_alloc();
@@ -438,14 +446,6 @@ void Kombyne::addPipelineData(void* prob)
 
   error = kb_pipeline_data_set_promises(m_hpd, promises);
   KB_CHECK_STATUS(error, "Could not set pipeline promises");
-}
-
-void Kombyne::execute()
-{
-  int error;
-
-  error = kb_simulation_execute(m_hp, m_hpd, m_hc);
-  KB_CHECK_STATUS(error, "Could not execute pipeline");
 }
 
 void Kombyne::addPipeline(void* prob)

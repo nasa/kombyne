@@ -28,6 +28,11 @@ class Kombyne
      */
     virtual ~Kombyne();
 
+    /**
+     * Execute the Kombyne pipeline.
+     */
+    inline void execute();
+
   private:
     inline void addMesh(void* mesh);
     inline void getNodes(void* mesh);
@@ -43,7 +48,6 @@ class Kombyne
     inline void addBoundaries(void* mesh);
     inline void addPipelineCollection();
     inline void addPipelineData(void* prob);
-    inline void execute();
     inline void addPipeline(void* prob);
     inline double rms(int64_t npoints, double* values);
     inline void addFields(void* soln, int64_t npoints);
