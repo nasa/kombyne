@@ -26,7 +26,7 @@ using VisKombine;
 })
 
 #define TINF_CHECK_SUCCESS(error, msg) ({ \
-  if( TINF_SUCCESS == error ) { \
+  if( TINF_SUCCESS != error ) { \
     std::stringstream ss; \
     ss << error; \
     std::string message = std::string(msg) + ": " + ss.str(); \
@@ -58,6 +58,7 @@ Kombyne::Kombyne(void* problem, void* mesh, void* soln, void* comm,
 
   mpi_comm = MPI_Comm_f2c(tinf_iris_get_mpi_fcomm(comm,&error));
   nprocs = tinf_iris_number_of_processes(comm, &error);
+  int32_t anals = nprocs - sims;
 
   if( sims == anals ) {
     role = KB_ROLE_SIMULATION_AND_ANALYSIS,
@@ -434,10 +435,10 @@ void Kombyne::addPipelineData(void* prob)
   Problem problem(prob);
 
   bool moving_grid = false;
-  prob.value("global:moving_grid",&moving_grid);
+  problem.value("global:moving_grid",&moving_grid);
 
   bool grid_motion_attribute = false;
-//prob.value("grid_motion:grid_motion_attribute",&grid_motion_attribute);
+//problem.value("grid_motion:grid_motion_attribute",&grid_motion_attribute);
 
   int32_t promises = KB_PROMISE_STATIC_FIELDS; 
 
