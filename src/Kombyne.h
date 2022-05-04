@@ -31,7 +31,7 @@ class Kombyne
     /**
      * Execute the Kombyne pipeline.
      */
-    inline void execute();
+    void execute();
 
   private:
     inline void addMesh(void* mesh);

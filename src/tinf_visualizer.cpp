@@ -1,14 +1,16 @@
 #include <iostream>
+#include <stdexcept>
 
+#include "tinf_iris.h"
 #include "tinf_visualizer.h"
 #include "Kombyne.h"
 
 #define TINF_CHECK_SUCCESS(error, msg) ({ \
-  if( TINF_SUCCESS == error ) { \
+  if( TINF_SUCCESS != error ) { \
     std::stringstream ss; \
     ss << error; \
     std::string message = std::string(msg) + ": " + ss.str(); \
-    std::cerr << message << std::endl; \
+    throw std::runtime_error(message.c_str()); \
   } \
 })
 
@@ -19,7 +21,7 @@ tinf_visualizer_create(void **visual, void *problem, void *mesh,
   try {
     int32_t error;
     int32_t nproc = tinf_iris_number_of_processes(comm, &error);
-    TINF_CHECK_STATUS(error, "Could not determine the number of processors");
+    TINF_CHECK_SUCCESS(error, "Could not determine the number of processors");
 
     VisKombyne::Kombyne* vis = new VisKombyne::Kombyne(problem, mesh, solution,
                                                        comm, nproc);
@@ -27,7 +29,7 @@ tinf_visualizer_create(void **visual, void *problem, void *mesh,
     *visual = (void*)vis;
 
     return TINF_SUCCESS;
-  } catch( std::runtime_exception& e) {
+  } catch( std::runtime_error& e) {
     std::cerr << e.what() << std::endl;
   }
 
@@ -49,10 +51,10 @@ tinf_visualizer(void *visual, _BOOL_ final_call)
   try {
     VisKombyne::Kombyne* vis = (VisKombyne::Kombyne*)(visual);
 
-    vis.execute();
+    vis->execute();
 
     return TINF_SUCCESS;
-  } catch( std::runtime_exception& e) {
+  } catch( std::runtime_error& e) {
     std::cerr << e.what() << std::endl;
   }
 
