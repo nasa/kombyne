@@ -33,6 +33,24 @@ AX_CXX_COMPILE_STDCXX([11])
 AS_VAR_SET_IF([with_pancake],[],[AS_VAR_SET([with_pancake],["subpackage"])])
 AX_PANCAKE_REQUIRED
 
+# Check for KombyneLite
+AC_ARG_WITH(KombyneLite,
+        [[  --with-KombyneLite[=ARG]   use KombyneLite library [ARG=no]]],
+        [with_kombynelite=$withval],
+        [AC_MSG_ERROR([KombyneLite is required])])
+AC_CHECK_FILE([$with_kombynelite/include/kombynelite/kombyne_data.h],
+              [kombynelite_cflags="-I$with_kombynelite/include/kombynelite"
+               AC_CHECK_FILE([$with_kombynelite/lib64/libkombynelite.a],
+                             [kombynelite_ldadd="-L$with_kombynelite/lib64 -lkombynelite"
+                              AC_DEFINE([HAVE_KOMBYNE],[1],[Kombyne available])
+                             ],
+                             [AC_MSG_ERROR([libkombynelite.a not found in $with_kombynelite/lib64])])],
+              [AC_MSG_ERROR([kombyne_data.h not found in $with_kombynelite/include/kombynelite])])
+AC_SUBST([kombynelite_cflags])
+AC_SUBST([kombynelite_ldadd])
+AM_CONDITIONAL(BUILD_WITH_KOMBYNELITE,[test -n "${kombynelite_cflags}"])
+
+# Output configuration
 AC_CONFIG_FILES( \
 	Makefile \
 	src/Makefile \
@@ -49,5 +67,7 @@ Configuration (Tinf Dynamic Loader):
       C++ Compiler:         ${CXX}
       C++ flags:            ${CXXFLAGS}
       Linker flags:         ${LDFLAGS}
+
+      KombyneLite:          ${with_kombynelite}
 
 ])
