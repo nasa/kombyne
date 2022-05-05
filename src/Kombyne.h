@@ -39,7 +39,8 @@ class Kombyne
     inline void buildConnectivity(void* mesh);
     inline void flagGhostNodes(void* mesh);
     inline void flagGhostCells(void* mesh);
-    inline std::vector<int64_t> boundaryTags(void* mesh);
+    inline std::vector<int64_t> boundaryTags(void* mesh,
+                                             int64_t ntri, int64_t nquad);
     inline void addTriangles(void* mesh, std::vector<int64_t> tris,
                              kb_bnd_handle hbnd, std::string bc);
     inline void addQuads(void* mesh, std::vector<int64_t> quads,
@@ -64,7 +65,7 @@ class Kombyne
     kb_ugrid_handle m_ug;
     kb_pipeline_collection_handle m_hp;
     kb_pipeline_data_handle m_hpd;
-    kb_controls_handle m_hpc;
+    kb_controls_handle m_hc;
 };
 
 } // namespace VisKombyne
