@@ -41,7 +41,7 @@ AC_ARG_WITH(KombyneLite,
 AC_CHECK_FILE([$with_kombynelite/include/kombynelite/kombyne_data.h],
               [kombynelite_cflags="-I$with_kombynelite/include/kombynelite"
                AC_CHECK_FILE([$with_kombynelite/lib64/libkombynelite.a],
-                             [kombynelite_ldadd="-L$with_kombynelite/lib64 -lkombynelite"
+                             [kombynelite_ldadd="-L$with_kombynelite/lib64 -lkombynelite -lconduit -lconduit_relay"
                               AC_DEFINE([HAVE_KOMBYNE],[1],[Kombyne available])
                              ],
                              [AC_MSG_ERROR([libkombynelite.a not found in $with_kombynelite/lib64])])],
