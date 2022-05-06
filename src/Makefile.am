@@ -9,4 +9,5 @@ kombyne_la_SOURCES = \
 	tinf_visualizer.cpp \
 	Kombyne.h \
 	Kombyne.cpp
-kombyne_la_LIBADD = @kombynelite_ldadd@
+kombyne_la_LIBADD = \
+	@kombynelite_ldadd@

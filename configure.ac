@@ -20,8 +20,11 @@ AC_SUBST([ACLOCAL_AMFLAGS], ["-I ./m4 -I ${ax_cv_path_build_tools}/aclocal \${AC
 
 AM_INIT_AUTOMAKE([1.11 tar-ustar -Wno-portability])
 
+# Check for MPI (may change FC and CC)
+MPI_LIB_PATH
+
 LT_PREREQ([2.4.2])
-LT_INIT([dlopen])
+LT_INIT([])
 
 AC_PROG_CXX(icpc armclang++ g++)
 AC_PROG_CC
