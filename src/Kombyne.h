@@ -20,8 +20,9 @@ class Kombyne
      * @param mesh  Mesh object
      * @param soln  Solution object
      * @param comm  Communications object
+     * @param anals  Number of analysis ranks (0 for in-situ)
      */
-    Kombyne(void* problem, void* mesh, void* soln, void* comm, int32_t sims);
+    Kombyne(void* problem, void* mesh, void* soln, void* comm, int32_t anals=0);
 
     /**
      * Destructor.

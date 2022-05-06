@@ -49,9 +49,9 @@ class Sample
 };
 
 Kombyne::Kombyne(void* problem, void* mesh, void* soln, void* comm,
-                 int32_t sims) : m_problem(problem), m_mesh(mesh),
-                                 m_soln(soln), m_comm(comm),
-                                 m_hc(KB_HANDLE_NULL)
+                 int32_t anals) : m_problem(problem), m_mesh(mesh),
+                                  m_soln(soln), m_comm(comm),
+                                  m_hc(KB_HANDLE_NULL)
 {
   int32_t error;
   MPI_Comm mpi_comm;
@@ -59,14 +59,19 @@ Kombyne::Kombyne(void* problem, void* mesh, void* soln, void* comm,
 
   mpi_comm = MPI_Comm_f2c(tinf_iris_get_mpi_fcomm(comm,&error));
   int32_t nprocs = tinf_iris_number_of_processes(comm, &error);
-  int32_t anals = nprocs - sims;
+  int32_t sims;
 
-  if( sims == anals ) {
-    role = KB_ROLE_SIMULATION_AND_ANALYSIS;
-  } else if( anals == 0 ) {
+  if( 0 == anals ) {
     role = KB_ROLE_SIMULATION;
-  } else {
+    sims = nprocs;
+  } else if( anals == nprocs ) {
+    role = KB_ROLE_SIMULATION_AND_ANALYSIS;
+    sims = nprocs;
+  } else if( anals < nprocs ) {
     role = KB_ROLE_AUTO;
+    sims = nprocs - anals;
+  } else {
+    throw std::runtime_error("Bad number of analysis ranks");
   }
 
   kb_initialize(mpi_comm,
@@ -77,13 +82,17 @@ Kombyne::Kombyne(void* problem, void* mesh, void* soln, void* comm,
                 "session.txt",
                 &m_split,
                 &m_newrole);
+std::cerr << "Kombyne Initialized" << std::endl;
 
   int64_t nnodes01 = tinf_mesh_node_count(mesh, &error);
   TINF_CHECK_SUCCESS(error, "Failed to retrieve mesh size");
 
   addMesh(mesh);
+std::cerr << "Added Mesh" << std::endl;
   addPipeline(problem);
+std::cerr << "Added Pipeline" << std::endl;
   addFields(soln, nnodes01);
+std::cerr << "Added Fields" << std::endl;
 }
 
 Kombyne::~Kombyne()
@@ -466,7 +475,6 @@ void Kombyne::addPipeline(void* prob)
 {
   addPipelineCollection();
   addPipelineData(prob);
-  execute();
 }
 
 double Kombyne::rms(int64_t npoints, double* values)
