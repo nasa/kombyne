@@ -82,17 +82,13 @@ Kombyne::Kombyne(void* problem, void* mesh, void* soln, void* comm,
                 "session.txt",
                 &m_split,
                 &m_newrole);
-std::cerr << "Kombyne Initialized" << std::endl;
 
   int64_t nnodes01 = tinf_mesh_node_count(mesh, &error);
   TINF_CHECK_SUCCESS(error, "Failed to retrieve mesh size");
 
   addMesh(mesh);
-std::cerr << "Added Mesh" << std::endl;
   addPipeline(problem);
-std::cerr << "Added Pipeline" << std::endl;
   addFields(soln, nnodes01);
-std::cerr << "Added Fields" << std::endl;
 }
 
 Kombyne::~Kombyne()
@@ -167,10 +163,12 @@ void Kombyne::buildConnectivity(void* mesh)
   int64_t nhex  = tinf_mesh_element_type_count(mesh, TINF_HEXA_8, &error);
   TINF_CHECK_SUCCESS(error, "Could not get number of Hexes");
 
-  int64_t* cellconnects;
-  if( (cellconnects=(int64_t*)malloc(5*ntet+6*npyr+7*nprz+9*nhex)) == NULL ) {
+  int32_t* cellconnects;
+  int64_t ncell01 = 5*ntet+6*npyr+7*nprz+9*nhex;
+  if( (cellconnects=(int32_t*)malloc(ncell01*sizeof(int32_t))) == NULL ) {
     throw std::runtime_error("Could not allocate cell connectivity");
   }
+  int64_t cellconnect[8];
 
   /* Assign connectivity */
 
@@ -181,41 +179,47 @@ void Kombyne::buildConnectivity(void* mesh)
     switch( tinf_mesh_element_type(mesh, i, &error) ) {
 //    case TINF_TRI_3:
 //      cellconnects[lconn++] = KB_CELLTYPE_TRI;
-//      error = tinf_mesh_element_nodes(mesh, i, &cellconnects[lconn]);
+//      error = tinf_mesh_element_nodes(mesh, i, cellconnect);
+//      for( int32_t j=0; j<3; ++j ) cellconnects[lconn+j] = cellconnect[j];
 //      lconn += 3;
 //      m_ncell01++;
 //      break;
 //    case TINF_QUAD_4:
 //      cellconnects[lconn++] = KB_CELLTYPE_QUAD;
-//      error = tinf_mesh_element_nodes(mesh, i, &cellconnects[lconn]);
+//      error = tinf_mesh_element_nodes(mesh, i, cellconnect);
+//      for( int32_t j=0; j<4; ++j ) cellconnects[lconn+j] = cellconnect[j];
 //      lconn += 4;
 //      m_ncell01++;
 //      break;
       case TINF_TETRA_4:
         cellconnects[lconn++] = KB_CELLTYPE_TET;
-        error = tinf_mesh_element_nodes(mesh, i, &cellconnects[lconn]);
+        error = tinf_mesh_element_nodes(mesh, i, cellconnect);
         TINF_CHECK_SUCCESS(error, "Could not get Tet connectivity");
+        for( int32_t j=0; j<4; ++j ) cellconnects[lconn+j] = cellconnect[j];
         lconn += 4;
         m_ncell01++;
         break;
       case TINF_PYRA_5:
         cellconnects[lconn++] = KB_CELLTYPE_PYR;
-        error = tinf_mesh_element_nodes(mesh, i, &cellconnects[lconn]);
+        error = tinf_mesh_element_nodes(mesh, i, cellconnect);
         TINF_CHECK_SUCCESS(error, "Could not get Pyramid connectivity");
+        for( int32_t j=0; j<5; ++j ) cellconnects[lconn+j] = cellconnect[j];
         lconn += 5;
         m_ncell01++;
         break;
       case TINF_PENTA_6:
         cellconnects[lconn++] = KB_CELLTYPE_WEDGE;
-        error = tinf_mesh_element_nodes(mesh, i, &cellconnects[lconn]);
+        error = tinf_mesh_element_nodes(mesh, i, cellconnect);
         TINF_CHECK_SUCCESS(error, "Could not get Prism connectivity");
+        for( int32_t j=0; j<6; ++j ) cellconnects[lconn+j] = cellconnect[j];
         lconn += 6;
         m_ncell01++;
         break;
       case TINF_HEXA_8:
         cellconnects[lconn++] = KB_CELLTYPE_HEX;
-        error = tinf_mesh_element_nodes(mesh, i, &cellconnects[lconn]);
+        error = tinf_mesh_element_nodes(mesh, i, cellconnect);
         TINF_CHECK_SUCCESS(error, "Could not get Hex connectivity");
+        for( int32_t j=0; j<8; ++j ) cellconnects[lconn+j] = cellconnect[j];
         lconn += 8;
         m_ncell01++;
         break;
@@ -223,7 +227,7 @@ void Kombyne::buildConnectivity(void* mesh)
   }
 
   kb_var_handle hconn = kb_var_alloc();
-  error = kb_var_setl(hconn, KB_MEM_OWN, 1, lconn, cellconnects);
+  error = kb_var_seti(hconn, KB_MEM_OWN, 1, lconn, cellconnects);
   KB_CHECK_STATUS(error, "Could not create cell connectivity array");
 
   error = kb_ugrid_add_cells_interleaved(m_ug, hconn);
@@ -324,13 +328,13 @@ void Kombyne::addTriangles(void* mesh, std::vector<int64_t> tris,
                            kb_bnd_handle hbnd, std::string bc)
 {
   int error;
-  double* t;
+  int32_t* t;
 
-  if( (t=(double*)malloc(tris.size()*sizeof(int64_t))) != NULL) {
+  if( (t=(int32_t*)malloc(tris.size()*sizeof(int32_t))) != NULL) {
     std::copy(tris.begin(), tris.end(), t);
 
     kb_var_handle ht = kb_var_alloc();
-    error = kb_var_setd(ht, KB_MEM_OWN, 1, tris.size(), t);
+    error = kb_var_seti(ht, KB_MEM_OWN, 1, tris.size(), t);
     KB_CHECK_STATUS(error, "Could not set Triangle cell array");
     error = kb_bnd_add_cells(hbnd, KB_CELLTYPE_TRI, ht, bc.c_str());
     KB_CHECK_STATUS(error, "Could not set Triangle cells");
@@ -341,13 +345,13 @@ void Kombyne::addQuads(void* mesh, std::vector<int64_t> quads,
                        kb_bnd_handle hbnd, std::string bc)
 {
   int error;
-  double* q;
+  int32_t* q;
 
-  if( (q=(double*)malloc(quads.size()*sizeof(int64_t))) != NULL) {
+  if( (q=(int32_t*)malloc(quads.size()*sizeof(int32_t))) != NULL) {
     std::copy(quads.begin(), quads.end(), q);
 
     kb_var_handle hq = kb_var_alloc();
-    error = kb_var_setd(hq, KB_MEM_OWN, 1, quads.size(), q);
+    error = kb_var_seti(hq, KB_MEM_OWN, 1, quads.size(), q);
     KB_CHECK_STATUS(error, "Could not set Quad cell array");
     error = kb_bnd_add_cells(hbnd, KB_CELLTYPE_QUAD, hq, bc.c_str());
     KB_CHECK_STATUS(error, "Could not add Quad cells");
@@ -355,7 +359,7 @@ void Kombyne::addQuads(void* mesh, std::vector<int64_t> quads,
 
 }
 
-void Kombyne::addBoundary(void* mesh, int64_t tag)
+void Kombyne::addBoundary(void* mesh, int64_t tag, kb_bnd_handle hbnd)
 {
   int error;
 
@@ -388,14 +392,8 @@ void Kombyne::addBoundary(void* mesh, int64_t tag)
   std::string root("Tag");
   std::string bc = root + ' ' + std::to_string(tag);
 
-  kb_bnd_handle hbnd;
-  hbnd = kb_bnd_alloc();
-
   addTriangles(mesh, tris, hbnd, bc);
   addQuads(mesh, quads, hbnd, bc);
-
-  error = kb_ugrid_set_boundaries(m_ug, hbnd);
-  KB_CHECK_STATUS(error, "Could not set boundaries");
 }
 
 void Kombyne::addBoundaries(void* mesh)
@@ -409,10 +407,16 @@ void Kombyne::addBoundaries(void* mesh)
 
   std::vector<int64_t> tags = boundaryTags(mesh, ntri, nquad);
 
+  kb_bnd_handle hbnd;
+  hbnd = kb_bnd_alloc();
+
   for (std::vector<int64_t>::iterator it = tags.begin();
        it != tags.end(); ++it) {
-    addBoundary(mesh, *it);
+    addBoundary(mesh, *it, hbnd);
   }
+
+  error = kb_ugrid_set_boundaries(m_ug, hbnd);
+  KB_CHECK_STATUS(error, "Could not set boundaries");
 }
 
 void Kombyne::addPipelineCollection()

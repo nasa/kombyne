@@ -46,7 +46,7 @@ class Kombyne
                              kb_bnd_handle hbnd, std::string bc);
     inline void addQuads(void* mesh, std::vector<int64_t> quads,
                          kb_bnd_handle hbnd, std::string bc);
-    inline void addBoundary(void* mesh, int64_t tag);
+    inline void addBoundary(void* mesh, int64_t tag, kb_bnd_handle hbnd);
     inline void addBoundaries(void* mesh);
     inline void addPipelineCollection();
     inline void addPipelineData(void* prob);
