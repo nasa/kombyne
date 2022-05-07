@@ -87,12 +87,14 @@ Kombyne::Kombyne(void* problem, void* mesh, void* soln, void* comm,
   TINF_CHECK_SUCCESS(error, "Failed to retrieve mesh size");
 
   addMesh(mesh);
-  addPipeline(problem);
   addFields(soln, nnodes01);
+  addPipeline(problem);
 }
 
 Kombyne::~Kombyne()
 {
+  kb_pipeline_data_free(m_hpd);
+  kb_pipeline_collection_free(m_hp);
   kb_finalize();
 }
 
@@ -440,8 +442,6 @@ void Kombyne::addPipelineData(void* prob)
 {
   int error;
 
-  kb_pipeline_data_handle m_hpd = kb_pipeline_data_alloc();
-
   int32_t domain = tinf_iris_rank(m_comm, &error);
   int32_t ndomains = tinf_iris_number_of_processes(m_comm, &error);
 
@@ -452,8 +452,11 @@ void Kombyne::addPipelineData(void* prob)
   double time;
   problem.value("info:timestep",&time);
 
-  error = kb_pipeline_data_add(m_hpd, domain, ndomains, timestep, time,
-                               (kb_mesh_handle)m_ug);
+  kb_mesh_handle hmesh = (kb_mesh_handle)m_ug;
+
+  m_hpd = kb_pipeline_data_alloc();
+
+  error = kb_pipeline_data_add(m_hpd, domain, ndomains, timestep, time, hmesh);
   KB_CHECK_STATUS(error, "Could not add pipeline data");
 
   bool moving_grid = false;
