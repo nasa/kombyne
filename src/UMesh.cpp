@@ -89,8 +89,8 @@ void UMesh::buildConnectivity()
   int64_t nhex  = tinf_mesh_element_type_count(m_mesh, TINF_HEXA_8, &error);
   TINF_CHECK_SUCCESS(error, "Could not get number of Hexes");
 
-  int64_t ncell01 = 5*ntet+6*npyr+7*nprz+9*nhex;
-  if( (m_cellconnects=(int32_t*)malloc(ncell01*sizeof(int32_t))) == NULL ) {
+  m_lconn = 5*ntet+6*npyr+7*nprz+9*nhex;
+  if( (m_cellconnects=(int32_t*)malloc(m_lconn*sizeof(int32_t))) == NULL ) {
     throw std::runtime_error("Could not allocate cell connectivity");
   }
   int64_t cellconnect[8];
@@ -150,6 +150,8 @@ void UMesh::buildConnectivity()
         break;
     }
   }
+  if( m_lconn != lconn )
+    throw std::runtime_error("Missing Cells");
 }
 
 void UMesh::flagGhostNodes()

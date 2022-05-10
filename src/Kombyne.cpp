@@ -178,7 +178,7 @@ void Kombyne::addConnectivity(kb_ugrid_handle ug)
   /*Interleaved ugrid connectivity */
   int32_t       error;
 
-  int lconn = (int)m_mesh.nCell01();
+  int lconn = (int)m_mesh.cellConnectsSize();
 
   kb_var_handle hconn = kb_var_alloc();
   error = kb_var_seti(hconn, KB_MEM_BORROW, 1, lconn, m_mesh.cellConnects());

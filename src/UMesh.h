@@ -36,11 +36,12 @@ class UMesh
     inline void moving(bool moving) { m_moving = moving; }
     inline void updateCoordinates() { if( m_moving ) getNodes(); }
 
-    inline int64_t nNodes01() { return m_nnodes01; }
+    inline int64_t nNodes01() const { return m_nnodes01; }
     inline double* x() { return m_x; }
     inline double* y() { return m_y; }
     inline double* z() { return m_z; }
-    inline int64_t nCell01() { return m_ncell01; }
+    inline int64_t nCell01() const { return m_ncell01; }
+    inline int64_t cellConnectsSize() const { return m_lconn; }
     inline int32_t* cellConnects() { return m_cellconnects; }
     inline int32_t* ghostNodes() { return m_ghost_nodes; }
     inline int32_t* ghostCells() { return m_ghost_cells; }
@@ -67,6 +68,7 @@ class UMesh
     double* m_y;
     double* m_z;
     int64_t m_ncell01;
+    int64_t m_lconn;
     int32_t* m_cellconnects;
     int32_t* m_ghost_nodes;
     int32_t* m_ghost_cells;
