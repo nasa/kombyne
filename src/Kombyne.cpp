@@ -143,8 +143,8 @@ std::cerr << "Add Nodes" << std::endl;
   addNodes(ug);
 std::cerr << "Add Connectivity" << std::endl;
   addConnectivity(ug);
-//addGhostNodes(ug);
-//addGhostCells(ug);
+  addGhostNodes(ug);
+  addGhostCells(ug);
 //addBoundaries(ug);
 
   return ug;
