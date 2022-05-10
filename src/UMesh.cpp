@@ -7,6 +7,7 @@
 #include <string>
 #include <sstream>
 #include <algorithm>
+#include <iostream>
 
 #include "UMesh.h"
 #include "tinf_mesh.h"
@@ -104,14 +105,14 @@ void UMesh::buildConnectivity()
 //    case TINF_TRI_3:
 //      m_cellconnects[lconn++] = KB_CELLTYPE_TRI;
 //      error = tinf_mesh_element_nodes(m_mesh, i, cellconnect);
-//      std::copy(&m_cellconnects[lconn], &m_cellconnects[lconn+3],cellconnect);
+//      std::copy(cellconnect, cellconnect+3, &m_cellconnects[lconn]);
 //      lconn += 3;
 //      m_ncell01++;
 //      break;
 //    case TINF_QUAD_4:
 //      m_cellconnects[lconn++] = KB_CELLTYPE_QUAD;
 //      error = tinf_mesh_element_nodes(m_mesh, i, cellconnect);
-//      std::copy(&m_cellconnects[lconn], &m_cellconnects[lconn+4],cellconnect);
+//      std::copy(cellconnect, cellconnect+4, &m_cellconnects[lconn]);
 //      lconn += 4;
 //      m_ncell01++;
 //      break;
@@ -119,7 +120,7 @@ void UMesh::buildConnectivity()
         m_cellconnects[lconn++] = KB_CELLTYPE_TET;
         error = tinf_mesh_element_nodes(m_mesh, i, cellconnect);
         TINF_CHECK_SUCCESS(error, "Could not get Tet connectivity");
-        std::copy(&m_cellconnects[lconn], &m_cellconnects[lconn+4],cellconnect);
+        std::copy(cellconnect, cellconnect+4, &m_cellconnects[lconn]);
         lconn += 4;
         m_ncell01++;
         break;
@@ -127,7 +128,7 @@ void UMesh::buildConnectivity()
         m_cellconnects[lconn++] = KB_CELLTYPE_PYR;
         error = tinf_mesh_element_nodes(m_mesh, i, cellconnect);
         TINF_CHECK_SUCCESS(error, "Could not get Pyramid connectivity");
-        std::copy(&m_cellconnects[lconn], &m_cellconnects[lconn+5],cellconnect);
+        std::copy(cellconnect, cellconnect+5, &m_cellconnects[lconn]);
         lconn += 5;
         m_ncell01++;
         break;
@@ -135,7 +136,7 @@ void UMesh::buildConnectivity()
         m_cellconnects[lconn++] = KB_CELLTYPE_WEDGE;
         error = tinf_mesh_element_nodes(m_mesh, i, cellconnect);
         TINF_CHECK_SUCCESS(error, "Could not get Prism connectivity");
-        std::copy(&m_cellconnects[lconn], &m_cellconnects[lconn+6],cellconnect);
+        std::copy(cellconnect, cellconnect+6, &m_cellconnects[lconn]);
         lconn += 6;
         m_ncell01++;
         break;
@@ -143,7 +144,7 @@ void UMesh::buildConnectivity()
         m_cellconnects[lconn++] = KB_CELLTYPE_HEX;
         error = tinf_mesh_element_nodes(m_mesh, i, cellconnect);
         TINF_CHECK_SUCCESS(error, "Could not get Hex connectivity");
-        std::copy(&m_cellconnects[lconn], &m_cellconnects[lconn+8],cellconnect);
+        std::copy(cellconnect, cellconnect+8, &m_cellconnects[lconn]);
         lconn += 8;
         m_ncell01++;
         break;
