@@ -7,6 +7,8 @@ AM_LDFLAGS = -module -no-undefined -avoid-version
 
 kombyne_la_SOURCES = \
 	tinf_visualizer.cpp \
+	UMesh.h \
+	UMesh.cpp \
 	Kombyne.h \
 	Kombyne.cpp
 kombyne_la_LIBADD = \
