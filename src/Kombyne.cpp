@@ -78,9 +78,7 @@ Kombyne::Kombyne(void* problem, void* mesh, void* soln, void* comm,
                 &m_split,
                 &m_newrole);
 
-std::cerr << "Adding Pipeline Collection" << std::endl;
   addPipelineCollection();
-std::cerr << "Kombyne constructed" << std::endl;
 }
 
 Kombyne::~Kombyne()
@@ -98,10 +96,10 @@ std::cerr << "Execute Pipeline" << std::endl;
 
 std::cerr << "Add Mesh" << std::endl;
   kb_ugrid_handle ug = addMesh();
-//std::cerr << "Get Fields" << std::endl;
-//addFields(ug);
-//std::cerr << "Add Samples" << std::endl;
-//addSamples();
+std::cerr << "Add Fields" << std::endl;
+  addFields(ug);
+  std::cerr << "Add Samples" << std::endl;
+  addSamples();
 std::cerr << "Add Pipeline Data" << std::endl;
   kb_pipeline_data_handle hpd = addPipelineData(ug);
 
@@ -139,13 +137,11 @@ kb_ugrid_handle Kombyne::addMesh()
 {
   kb_ugrid_handle ug = kb_ugrid_alloc();
 
-std::cerr << "Add Nodes" << std::endl;
   addNodes(ug);
-std::cerr << "Add Connectivity" << std::endl;
   addConnectivity(ug);
   addGhostNodes(ug);
   addGhostCells(ug);
-//addBoundaries(ug);
+  addBoundaries(ug);
 
   return ug;
 }
