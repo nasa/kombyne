@@ -59,6 +59,13 @@ class Kombyne
     virtual ~Kombyne();
 
     /**
+     * Check to see if need to process this timestep.
+     *
+     * @returns true if need to process this timestep.
+     */
+    bool processTimestep();
+
+    /**
      * Execute the Kombyne pipeline.
      */
     void execute();
@@ -89,6 +96,8 @@ class Kombyne
     void* m_comm;
     MPI_Comm m_split;
     kb_role m_newrole;
+
+    int64_t m_timestep;
 
     std::vector<Field> m_fields;
 

@@ -3,6 +3,7 @@
 
 #include "tinf_iris.h"
 #include "tinf_visualizer.h"
+#include "pancake_cxx/Problem.h"
 #include "Kombyne.h"
 
 #define TINF_CHECK_SUCCESS(error, msg) ({ \
@@ -51,7 +52,8 @@ tinf_visualizer(void *visual, _BOOL_ final_call)
   try {
     VisKombyne::Kombyne* vis = (VisKombyne::Kombyne*)(visual);
 
-    vis->execute();
+    if( vis->processTimestep() )
+      vis->execute();
 
     return TINF_SUCCESS;
   } catch( std::runtime_error& e) {

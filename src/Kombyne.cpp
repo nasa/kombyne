@@ -36,7 +36,7 @@ using namespace VisKombyne;
 
 Kombyne::Kombyne(void* problem, void* mesh, void* soln, void* comm,
                  int32_t anals) : m_problem(problem), m_mesh(mesh,comm),
-                                  m_soln(soln), m_comm(comm)
+                                  m_soln(soln), m_comm(comm), m_timestep(0)
 {
   int32_t error;
   MPI_Comm mpi_comm;
@@ -89,25 +89,33 @@ Kombyne::~Kombyne()
   kb_finalize();
 }
 
+bool Kombyne::processTimestep()
+{
+  int error;
+
+  int32_t freq;
+
+  m_problem.value("info:step",&m_timestep);
+  m_problem.value("global:visualization_freq",&freq);
+
+  if( 0 != freq && 0 == m_timestep%freq )
+    return true;
+
+  return false;
+}
+
 void Kombyne::execute()
 {
   int error;
-std::cerr << "Execute Pipeline" << std::endl;
 
-std::cerr << "Add Mesh" << std::endl;
   kb_ugrid_handle ug = addMesh();
-std::cerr << "Add Fields" << std::endl;
   addFields(ug);
-  std::cerr << "Add Samples" << std::endl;
   addSamples();
-std::cerr << "Add Pipeline Data" << std::endl;
   kb_pipeline_data_handle hpd = addPipelineData(ug);
 
-std::cerr << "Executing" << std::endl;
   kb_controls_handle hc = KB_HANDLE_NULL;
   error = kb_simulation_execute(m_hp, hpd, hc);
   KB_CHECK_STATUS(error, "Could not execute pipeline");
-std::cerr << "Done" << std::endl;
 
   kb_pipeline_data_free(hpd);
 }
@@ -150,7 +158,6 @@ void Kombyne::addNodes(kb_ugrid_handle ug)
 {
   int error;
 
-std::cerr << "Get Nodes" << std::endl;
   m_mesh.getNodes();
 
   int n01 = (int)m_mesh.nNodes01();
@@ -255,7 +262,6 @@ void Kombyne::addTriangles(std::vector<int32_t> tris,
   kb_var_handle ht = kb_var_alloc();
   error = kb_var_seti(ht, KB_MEM_BORROW, 1, tris.size(), tris.data());
   KB_CHECK_STATUS(error, "Could not set Triangle cell array");
-std::cerr << "Add Triangles to " << bc << std::endl;
   error = kb_bnd_add_cells(hbnd, KB_CELLTYPE_TRI, ht, bc.c_str());
   KB_CHECK_STATUS(error, "Could not set Triangle cells");
 }
@@ -296,17 +302,14 @@ kb_pipeline_data_handle Kombyne::addPipelineData(kb_ugrid_handle ug)
   int32_t domain = tinf_iris_rank(m_comm, &error);
   int32_t ndomains = tinf_iris_number_of_processes(m_comm, &error);
 
-  int64_t timestep=0;
-  m_problem.value("info:step",&timestep);
   double time=0.0;
   m_problem.value("info:timestep",&time);
-std::cerr << "Timestep " << timestep << " Time " << time << std::endl;
 
   kb_mesh_handle hmesh = (kb_mesh_handle)ug;
 
   kb_pipeline_data_handle hpd = kb_pipeline_data_alloc();
 
-  error = kb_pipeline_data_add(hpd, domain, ndomains, timestep, time, hmesh);
+  error = kb_pipeline_data_add(hpd, domain, ndomains, m_timestep, time, hmesh);
   KB_CHECK_STATUS(error, "Could not add pipeline data");
 
 #ifdef KOMBYNE
