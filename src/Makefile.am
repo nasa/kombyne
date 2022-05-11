@@ -12,4 +12,5 @@ kombyne_la_SOURCES = \
 	Kombyne.h \
 	Kombyne.cpp
 kombyne_la_LIBADD = \
-	@kombynelite_ldadd@
+	@kombynelite_ldadd@ \
+	@png_ldadd@

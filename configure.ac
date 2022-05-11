@@ -53,6 +53,18 @@ AC_SUBST([kombynelite_cflags])
 AC_SUBST([kombynelite_ldadd])
 AM_CONDITIONAL(BUILD_WITH_KOMBYNELITE,[test -n "${kombynelite_cflags}"])
 
+# Check for libpng
+AC_ARG_WITH(png,
+        [[  --with-png[=ARG]   use PNG library [ARG=no]]],
+        [with_png=$withval
+         AC_CHECK_FILE([$with_png/libpng.so],
+                       [png_ldadd="-L$with_png -lpng"
+                        AC_DEFINE([HAVE_PNG],[1],[PNG available])],
+                       [AC_MSG_ERROR([libpng.so not found in $with_png])])],
+        [with_png='no'
+         AC_MSG_WARN([libpng not found, no support for PNG/Cinema])])
+AC_SUBST([png_ldadd])
+
 # Output configuration
 AC_CONFIG_FILES( \
 	Makefile \
@@ -72,5 +84,6 @@ Configuration (Tinf Dynamic Loader):
       Linker flags:         ${LDFLAGS}
 
       KombyneLite:          ${with_kombynelite}
+      PNG:                  ${with_png}
 
 ])
