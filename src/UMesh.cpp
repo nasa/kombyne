@@ -250,7 +250,7 @@ void UMesh::addBoundary(int64_t tag)
 
   int64_t nodes[4];
 
-  for( int64_t i=0, j=0; i<tinf_mesh_element_count(m_mesh,&error); ++i ) {
+  for( int64_t i=0; i<tinf_mesh_element_count(m_mesh,&error); ++i ) {
     switch( tinf_mesh_element_type(m_mesh, i, &error) ) {
       case TINF_TRI_3:
         if( tinf_mesh_element_tag(m_mesh, i, &error) == tag ) {
@@ -258,6 +258,7 @@ void UMesh::addBoundary(int64_t tag)
           TINF_CHECK_SUCCESS(error, "Could not get Triangle element nodes");
           bound.addTri(nodes);
         }
+        break;
       case TINF_QUAD_4:
         if( tinf_mesh_element_tag(m_mesh, i, &error) == tag ) {
           error = tinf_mesh_element_nodes(m_mesh, i, nodes);
