@@ -39,6 +39,10 @@ UMesh::UMesh(void* mesh, void* comm) :
 
 UMesh::~UMesh()
 {
+  std::vector<Boundary*>::iterator it;
+  for (it = m_bound.begin(); it != m_bound.end(); ++it)
+    delete *it;
+
   free(m_ghost_cells);
   free(m_ghost_nodes);
   free(m_cellconnects);
@@ -246,7 +250,11 @@ void UMesh::addBoundary(int64_t tag)
 {
   int error;
 
-  Boundary bound(tag);
+  std::string root("Tag");
+  std::string bc = root + ' ' + std::to_string(tag);
+
+  Boundary* bound = new Boundary(tag, bc);
+  m_bound.push_back(bound);
 
   int64_t nodes[4];
 
@@ -256,19 +264,17 @@ void UMesh::addBoundary(int64_t tag)
         if( tinf_mesh_element_tag(m_mesh, i, &error) == tag ) {
           error = tinf_mesh_element_nodes(m_mesh, i, nodes);
           TINF_CHECK_SUCCESS(error, "Could not get Triangle element nodes");
-          bound.addTri(nodes);
+          bound->addTri(nodes);
         }
         break;
       case TINF_QUAD_4:
         if( tinf_mesh_element_tag(m_mesh, i, &error) == tag ) {
           error = tinf_mesh_element_nodes(m_mesh, i, nodes);
           TINF_CHECK_SUCCESS(error, "Could not get Quad element nodes");
-          bound.addQuad(nodes);
+          bound->addQuad(nodes);
         }
         break;
     }
   }
-
-  m_bound.push_back(bound);
 }
 

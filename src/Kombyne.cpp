@@ -147,7 +147,7 @@ kb_ugrid_handle Kombyne::addMesh()
 
   addNodes(ug);
   addConnectivity(ug);
-  addGhostNodes(ug);
+//addGhostNodes(ug);
   addGhostCells(ug);
   addBoundaries(ug);
 
@@ -223,59 +223,75 @@ void Kombyne::addBoundaries(kb_ugrid_handle ug)
 {
   int error;
 
-  const std::vector<Boundary>& boundary = m_mesh.boundary();
+  std::vector<Boundary*> boundaries = m_mesh.boundaries();
 
   kb_bnd_handle hbnd;
   hbnd = kb_bnd_alloc();
 
-  for (std::vector<Boundary>::const_iterator it = boundary.begin();
-       it != boundary.end(); ++it) {
+#ifdef TECOUT
+  std::cerr << "title=\"tecplot geometry file\"" << std::endl;
+  std::cerr << "variables = x y z" << std::endl;
+#endif
+
+  std::vector<Boundary*>::iterator it;
+  for (it = boundaries.begin(); it != boundaries.end(); ++it)
     addBoundary(*it, hbnd);
-  }
 
   error = kb_ugrid_set_boundaries(ug, hbnd);
   KB_CHECK_STATUS(error, "Could not set boundaries");
 }
 
-void Kombyne::addBoundary(Boundary bound, kb_bnd_handle hbnd)
+void Kombyne::addBoundary(Boundary* boundary, kb_bnd_handle hbnd)
 {
   int error;
 
-  const std::vector<int32_t>& tris = bound.tris();
-  const std::vector<int32_t>& quads = bound.quads();
-
-  if( 0 == tris.size() && 0 == quads.size() )
+  if( 0 == boundary->tris().size() && 0 == boundary->quads().size() )
     throw std::runtime_error("Empty boundary");
 
-  std::string root("Tag");
-  std::string bc = root + ' ' + std::to_string(bound.tag());
-
-  addTriangles(tris, hbnd, bc);
-  addQuads(quads, hbnd, bc);
+  addTriangles(boundary->tris(), hbnd, boundary->name());
+  addQuads(boundary->quads(), hbnd, boundary->name());
 }
 
-void Kombyne::addTriangles(std::vector<int32_t> tris,
+void Kombyne::addTriangles(std::vector<int32_t>& tris,
                            kb_bnd_handle hbnd, std::string bc)
 {
-  int error;
+  if( tris.size() > 0 ) {
+    int error;
 
-  kb_var_handle ht = kb_var_alloc();
-  error = kb_var_seti(ht, KB_MEM_BORROW, 1, tris.size(), tris.data());
-  KB_CHECK_STATUS(error, "Could not set Triangle cell array");
-  error = kb_bnd_add_cells(hbnd, KB_CELLTYPE_TRI, ht, bc.c_str());
-  KB_CHECK_STATUS(error, "Could not set Triangle cells");
+#ifdef TECOUT
+    double* x = m_mesh.x();
+    double* y = m_mesh.y();
+    double* z = m_mesh.z();
+    std::cerr << "zone t=\"" << bc << "\", i=" << m_mesh.nNodes01() << ", j=" << tris.size()/3 << ", f=fepoint, et=triangle" << std::endl;
+    for(int i=0; i<m_mesh.nNodes01(); ++i) {
+      std::cerr << x[i] << ", " << y[i] << ", " << z[i] << std::endl;
+    }
+    int32_t* t=tris.data();
+    for(int i=0; i<tris.size(); i+=3) {
+      std::cerr << t[i]+1 << ", " << t[i+1]+1 << ", " << t[i+2]+1 << std::endl;
+    }
+#endif
+
+    kb_var_handle ht = kb_var_alloc();
+    error = kb_var_seti(ht, KB_MEM_BORROW, 1, tris.size(), tris.data());
+    KB_CHECK_STATUS(error, "Could not set Triangle cell array");
+    error = kb_bnd_add_cells(hbnd, KB_CELLTYPE_TRI, ht, bc.c_str());
+    KB_CHECK_STATUS(error, "Could not set Triangle cells");
+  }
 }
 
-void Kombyne::addQuads(std::vector<int32_t> quads,
+void Kombyne::addQuads(std::vector<int32_t>& quads,
                        kb_bnd_handle hbnd, std::string bc)
 {
-  int error;
+  if( quads.size() > 0 ) {
+    int error;
 
-  kb_var_handle hq = kb_var_alloc();
-  error = kb_var_seti(hq, KB_MEM_BORROW, 1, quads.size(), quads.data());
-  KB_CHECK_STATUS(error, "Could not set Quad cell array");
-  error = kb_bnd_add_cells(hbnd, KB_CELLTYPE_QUAD, hq, bc.c_str());
-  KB_CHECK_STATUS(error, "Could not add Quad cells");
+    kb_var_handle hq = kb_var_alloc();
+    error = kb_var_seti(hq, KB_MEM_BORROW, 1, quads.size(), quads.data());
+    KB_CHECK_STATUS(error, "Could not set Quad cell array");
+    error = kb_bnd_add_cells(hbnd, KB_CELLTYPE_QUAD, hq, bc.c_str());
+    KB_CHECK_STATUS(error, "Could not add Quad cells");
+  }
 }
 
 void Kombyne::addPipelineCollection()
@@ -333,8 +349,8 @@ void Kombyne::addFields(kb_ugrid_handle ug)
 
   kb_fields_handle hfield = kb_fields_alloc();
 
-  for(std::vector<Field>::iterator it = m_fields.begin(); 
-      it != m_fields.end(); ++it) {
+  std::vector<Field>::iterator it;
+  for(it = m_fields.begin(); it != m_fields.end(); ++it) {
     const char* name = it->name();
     error = tinf_solution_get_outputs_at_nodes(m_soln, it->type(), 0,
                                                m_mesh.nNodes01(), 1, &name,
@@ -368,8 +384,8 @@ void Kombyne::addSamples()
 {
   int error;
 
-  for(std::vector<Field>::iterator it = m_fields.begin(); 
-      it != m_fields.end(); ++it) {
+  std::vector<Field>::iterator it;
+  for(it = m_fields.begin(); it != m_fields.end(); ++it) {
     if( strncmp(it->name(),"Residual",8) ) {
       double sample = l2norm(m_mesh.nNodes01(), it->values());
       error = kb_add_sample(it->name(), sample);

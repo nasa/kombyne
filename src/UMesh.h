@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <vector>
 
 namespace VisKombyne
@@ -8,7 +9,10 @@ namespace VisKombyne
 class Boundary
 {
   public:
-    Boundary(int64_t tag) : m_tag(tag) {}
+//  Boundary(const Boundary& copy) { std::cerr << "Copy Construct Boundary " << copy.m_tag << std::endl; }
+//  Boundary(int64_t tag, std::string name) : m_tag(tag), m_name(name) { std::cerr << "Construct Boundary " << m_tag << std::endl; }
+    Boundary(int64_t tag, std::string name) : m_tag(tag), m_name(name) {}
+//  virtual ~Boundary() { std::cerr << "Destroy Boundary " << m_tag << ", " << m_tris.size() << std::endl; }
 
     inline void addTri(int64_t nodes[3])
       { m_tris.insert(m_tris.end(), nodes, nodes+3); }
@@ -16,11 +20,13 @@ class Boundary
       { m_quads.insert(m_quads.end(), nodes, nodes+4); }
 
     inline int64_t tag() const { return m_tag; }
-    inline const std::vector<int32_t>& tris() const { return m_tris; }
-    inline const std::vector<int32_t>& quads() const { return m_quads; }
+    inline std::string name() const { return m_name; }
+    inline std::vector<int32_t>& tris() { return m_tris; }
+    inline std::vector<int32_t>& quads() { return m_quads; }
 
   private:
     int64_t m_tag;
+    std::string m_name;
     std::vector<int32_t> m_tris;
     std::vector<int32_t> m_quads;
 };
@@ -42,10 +48,10 @@ class UMesh
     inline double* z() { return m_z; }
     inline int64_t nCell01() const { return m_ncell01; }
     inline int64_t cellConnectsSize() const { return m_lconn; }
-    inline int32_t* cellConnects() { return m_cellconnects; }
-    inline int32_t* ghostNodes() { return m_ghost_nodes; }
-    inline int32_t* ghostCells() { return m_ghost_cells; }
-    inline const std::vector<Boundary>& boundary() const { return m_bound; }
+    inline int32_t* cellConnects() const { return m_cellconnects; }
+    inline int32_t* ghostNodes() const { return m_ghost_nodes; }
+    inline int32_t* ghostCells() const { return m_ghost_cells; }
+    inline std::vector<Boundary*> boundaries() { return m_bound; }
 
   private:
     inline void addNodes();
@@ -72,7 +78,7 @@ class UMesh
     int32_t* m_cellconnects;
     int32_t* m_ghost_nodes;
     int32_t* m_ghost_cells;
-    std::vector<Boundary> m_bound;
+    std::vector<Boundary*> m_bound;
 };
 
 } // namespace VisKombyne
