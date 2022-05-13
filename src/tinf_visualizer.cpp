@@ -3,7 +3,6 @@
 
 #include "tinf_iris.h"
 #include "tinf_visualizer.h"
-#include "pancake_cxx/Problem.h"
 #include "Kombyne.h"
 
 #define TINF_CHECK_SUCCESS(error, msg) ({ \
