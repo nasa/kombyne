@@ -20,7 +20,7 @@ class Boundary
       std::endl; }
 #endif
 
-    Boundary(int64_t tag, std::string name) : m_tag(tag), m_name(name) {}
+    Boundary(int64_t tag, std::string& name) : m_tag(tag), m_name(name) {}
 
     inline void addTri(int64_t nodes[3])
       { m_tris.insert(m_tris.end(), nodes, nodes+3); }
@@ -43,7 +43,7 @@ class Boundary
 class UMesh
 {
   public:
-    UMesh(void* mesh, void* comm);
+    UMesh(void* prob, void* mesh, void* comm);
     virtual ~UMesh();
 
     void getNodes();
@@ -68,9 +68,9 @@ class UMesh
     inline void addGhostCells();
     inline void flagGhostNodes();
     inline void flagGhostCells();
-    inline void addBoundaries();
+    inline void addBoundaries(std::vector<std::string> families);
     inline std::vector<int64_t> boundaryTags(int64_t ntri, int64_t nquad);
-    inline void addBoundary(int64_t tag);
+    inline void addBoundary(int64_t tag, std::string& family);
 
   private:
     void* m_mesh;

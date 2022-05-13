@@ -35,7 +35,8 @@ using namespace VisKombyne;
 
 
 Kombyne::Kombyne(void* problem, void* mesh, void* soln, void* comm,
-                 int32_t anals) : m_problem(problem), m_mesh(mesh,comm),
+                 int32_t anals) : m_problem(problem),
+                                  m_mesh(problem, mesh,comm),
                                   m_soln(soln), m_comm(comm), m_timestep(0)
 {
   int32_t error;

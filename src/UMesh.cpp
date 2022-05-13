@@ -11,6 +11,7 @@
 
 #include "UMesh.h"
 #include "tinf_mesh.h"
+#include "pancake_cxx/Problem.h"
 #include "kombyne_data_celltype.h"
 
 using namespace VisKombyne;
@@ -25,16 +26,20 @@ using namespace VisKombyne;
 })
 
 
-UMesh::UMesh(void* mesh, void* comm) :
+UMesh::UMesh(void* prob, void* mesh, void* comm) :
   m_mesh(mesh), m_comm(comm), m_moving(false)
 {
   int error;
+
+  pancake::Problem problem(prob);
+  std::vector<std::string> families;
+  problem.value("bc:family", families);
 
   addNodes();
   buildConnectivity();
   flagGhostNodes();
   flagGhostCells();
-  addBoundaries();
+  addBoundaries(families);
 }
 
 UMesh::~UMesh()
@@ -200,7 +205,7 @@ void UMesh::flagGhostCells()
   }
 }
 
-void UMesh::addBoundaries()
+void UMesh::addBoundaries(std::vector<std::string> families)
 {
   int error;
 
@@ -213,9 +218,10 @@ void UMesh::addBoundaries()
 
   m_bound.reserve(tags.size());
 
-  for (std::vector<int64_t>::iterator it = tags.begin();
-       it != tags.end(); ++it) {
-    addBoundary(*it);
+  std::vector<int64_t>::iterator it;
+  std::vector<std::string>::iterator sit;
+  for (it = tags.begin(), sit=families.begin(); it != tags.end(); ++it, ++sit) {
+    addBoundary(*it, *sit);
   }
 }
 
@@ -242,14 +248,11 @@ std::vector<int64_t> UMesh::boundaryTags(int64_t ntri, int64_t nquad)
   return v;
 }
 
-void UMesh::addBoundary(int64_t tag)
+void UMesh::addBoundary(int64_t tag, std::string& family)
 {
   int error;
 
-  std::string root("Tag");
-  std::string bc = root + ' ' + std::to_string(tag);
-
-  m_bound.push_back(Boundary(tag,bc));
+  m_bound.push_back(Boundary(tag,family));
   Boundary& bound = m_bound.back();
 
   int64_t nodes[4];
