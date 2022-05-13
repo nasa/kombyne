@@ -79,6 +79,11 @@ Kombyne::Kombyne(void* problem, void* mesh, void* soln, void* comm,
                 &m_newrole);
 
   addPipelineCollection();
+
+  bool initial = false;
+  m_problem.value("volume_output:output_initial_state",&initial);
+  if( initial )
+    execute();
 }
 
 Kombyne::~Kombyne()
@@ -93,7 +98,7 @@ bool Kombyne::processTimestep()
 {
   int error;
 
-  int32_t freq;
+  int32_t freq = 0;
 
   m_problem.value("info:step",&m_timestep);
   m_problem.value("global:visualization_freq",&freq);
@@ -107,6 +112,13 @@ bool Kombyne::processTimestep()
 void Kombyne::execute()
 {
   int error;
+
+  if( 0 == tinf_iris_rank(m_comm, &error) ) {
+    double time=0.0;
+    m_problem.value("info:timestep",&time);
+    std::cerr << "Execute pipeline: timestep=" << m_timestep
+              << ", time=" << time << std::endl;
+  }
 
   kb_ugrid_handle ug = addMesh();
   addFields(ug);
