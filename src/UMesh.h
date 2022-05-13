@@ -9,10 +9,18 @@ namespace VisKombyne
 class Boundary
 {
   public:
-//  Boundary(const Boundary& copy) { std::cerr << "Copy Construct Boundary " << copy.m_tag << std::endl; }
-//  Boundary(int64_t tag, std::string name) : m_tag(tag), m_name(name) { std::cerr << "Construct Boundary " << m_tag << std::endl; }
+#ifdef TEST_CONSTRUCTION
+    Boundary(const Boundary& copy) : m_tag(copy.m_tag), m_name(copy.m_name),
+      m_tris(copy.m_tris), m_quads(copy.m_quads)
+    { std::cerr << "Copy Construct Boundary " << copy.m_tag << std::endl; }
+    Boundary(int64_t tag, std::string name) : m_tag(tag), m_name(name)
+    { std::cerr << "Construct Boundary " << m_tag << std::endl; }
+    virtual ~Boundary()
+    { std::cerr << "Destroy Boundary " << m_tag << ", " << m_tris.size() <<
+      std::endl; }
+#endif
+
     Boundary(int64_t tag, std::string name) : m_tag(tag), m_name(name) {}
-//  virtual ~Boundary() { std::cerr << "Destroy Boundary " << m_tag << ", " << m_tris.size() << std::endl; }
 
     inline void addTri(int64_t nodes[3])
       { m_tris.insert(m_tris.end(), nodes, nodes+3); }
@@ -51,7 +59,7 @@ class UMesh
     inline int32_t* cellConnects() const { return m_cellconnects; }
     inline int32_t* ghostNodes() const { return m_ghost_nodes; }
     inline int32_t* ghostCells() const { return m_ghost_cells; }
-    inline std::vector<Boundary*> boundaries() { return m_bound; }
+    inline std::vector<Boundary>& boundaries() { return m_bound; }
 
   private:
     inline void addNodes();
@@ -78,7 +86,7 @@ class UMesh
     int32_t* m_cellconnects;
     int32_t* m_ghost_nodes;
     int32_t* m_ghost_cells;
-    std::vector<Boundary*> m_bound;
+    std::vector<Boundary> m_bound;
 };
 
 } // namespace VisKombyne

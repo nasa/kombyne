@@ -223,7 +223,7 @@ void Kombyne::addBoundaries(kb_ugrid_handle ug)
 {
   int error;
 
-  std::vector<Boundary*> boundaries = m_mesh.boundaries();
+  std::vector<Boundary>& boundaries = m_mesh.boundaries();
 
   kb_bnd_handle hbnd;
   hbnd = kb_bnd_alloc();
@@ -233,7 +233,7 @@ void Kombyne::addBoundaries(kb_ugrid_handle ug)
   std::cerr << "variables = x y z" << std::endl;
 #endif
 
-  std::vector<Boundary*>::iterator it;
+  std::vector<Boundary>::iterator it;
   for (it = boundaries.begin(); it != boundaries.end(); ++it)
     addBoundary(*it, hbnd);
 
@@ -241,15 +241,15 @@ void Kombyne::addBoundaries(kb_ugrid_handle ug)
   KB_CHECK_STATUS(error, "Could not set boundaries");
 }
 
-void Kombyne::addBoundary(Boundary* boundary, kb_bnd_handle hbnd)
+void Kombyne::addBoundary(Boundary& boundary, kb_bnd_handle hbnd)
 {
   int error;
 
-  if( 0 == boundary->tris().size() && 0 == boundary->quads().size() )
+  if( 0 == boundary.tris().size() && 0 == boundary.quads().size() )
     throw std::runtime_error("Empty boundary");
 
-  addTriangles(boundary->tris(), hbnd, boundary->name());
-  addQuads(boundary->quads(), hbnd, boundary->name());
+  addTriangles(boundary.tris(), hbnd, boundary.name());
+  addQuads(boundary.quads(), hbnd, boundary.name());
 }
 
 void Kombyne::addTriangles(std::vector<int32_t>& tris,

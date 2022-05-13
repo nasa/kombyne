@@ -78,7 +78,7 @@ class Kombyne
     inline void addGhostNodes(kb_ugrid_handle ug);
     inline void addGhostCells(kb_ugrid_handle ug);
     inline void addBoundaries(kb_ugrid_handle ug);
-    inline void addBoundary(Boundary* bound, kb_bnd_handle hbnd);
+    inline void addBoundary(Boundary& bound, kb_bnd_handle hbnd);
     inline void addTriangles(std::vector<int32_t>& tris,
                              kb_bnd_handle hbnd, std::string bc);
     inline void addQuads(std::vector<int32_t>& quads,
