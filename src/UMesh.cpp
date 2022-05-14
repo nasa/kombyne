@@ -219,11 +219,10 @@ void UMesh::addBoundaries(std::vector<std::string> families)
   m_bound.reserve(tags.size());
 
   std::vector<int64_t>::iterator it;
-  std::vector<std::string>::iterator sit;
   std::string family;
-  for (it = tags.begin(), sit=families.begin(); it != tags.end(); ++it) {
-    if (sit != families.end())
-      family = *sit++;
+  for (it = tags.begin(); it != tags.end(); ++it) {
+    if (0 < *it && *it <= families.size())
+      family = families[*it-1];
     else
       family = std::string("Tag ") + std::to_string(*it);
 
