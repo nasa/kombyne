@@ -220,8 +220,14 @@ void UMesh::addBoundaries(std::vector<std::string> families)
 
   std::vector<int64_t>::iterator it;
   std::vector<std::string>::iterator sit;
-  for (it = tags.begin(), sit=families.begin(); it != tags.end(); ++it, ++sit) {
-    addBoundary(*it, *sit);
+  std::string family;
+  for (it = tags.begin(), sit=families.begin(); it != tags.end(); ++it) {
+    if (sit != families.end())
+      family = *sit++;
+    else
+      family = std::string("Tag ") + std::to_string(*it);
+
+    addBoundary(*it, family);
   }
 }
 
