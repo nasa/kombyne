@@ -11,6 +11,7 @@
 
 #include "UMesh.h"
 #include "tinf_mesh.h"
+#include "tinf_iris.h"
 #include "pancake_cxx/Problem.h"
 #include "kombyne_data_celltype.h"
 
@@ -34,6 +35,12 @@ UMesh::UMesh(void* prob, void* mesh, void* comm) :
   pancake::Problem problem(prob);
   std::vector<std::string> families;
   problem.value("bc:family", families);
+
+//if( 0 == tinf_iris_rank(comm, &error) ) {
+//  std::vector<std::string>::iterator it;
+//  for( it = families.begin(); it != families.end(); ++it )
+//    std::cerr << "Available Boundary: " << *it << std::endl;
+//}
 
   addNodes();
   buildConnectivity();
