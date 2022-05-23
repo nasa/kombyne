@@ -48,6 +48,7 @@ class UMesh
 
     void getNodes();
     inline void moving(bool moving) { m_moving = moving; }
+    inline bool moving() { return m_moving; }
     inline void updateCoordinates() { if( m_moving ) getNodes(); }
 
     inline int64_t nNodes01() const { return m_nnodes01; }

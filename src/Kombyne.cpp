@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
+#include <iostream>
 #include <sstream>
 #include <algorithm>
 
@@ -341,10 +342,10 @@ kb_pipeline_data_handle Kombyne::addPipelineData(kb_ugrid_handle ug)
   error = kb_pipeline_data_add(hpd, domain, ndomains, m_timestep, time, hmesh);
   KB_CHECK_STATUS(error, "Could not add pipeline data");
 
-#ifdef KOMBYNE
+#ifdef KOMBYNE_1_1
   int32_t promises = KB_PROMISE_STATIC_FIELDS; 
 
-  if( !m_moving_mesh )
+  if( !m_mesh.moving() )
     promises |= KB_PROMISE_STATIC_GRID;
 
   error = kb_pipeline_data_set_promises(hpd, promises);
