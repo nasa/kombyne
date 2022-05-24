@@ -317,8 +317,10 @@ void Kombyne::addPipelineCollection()
   const char* filename = std::getenv("KOMBYNE_PIPELINE");
   if( filename ) {
     error = kb_pipeline_collection_set_filename(m_hp, filename);
+    KB_CHECK_STATUS(error, "Could not set pipeline collection filename");
   } else {
     error = kb_pipeline_collection_set_filename(m_hp, "kombyne.yaml");
+    KB_CHECK_STATUS(error,"Could not set default pipeline collection filename");
   }
   
   error = kb_pipeline_collection_initialize(m_hp);
@@ -342,6 +344,7 @@ kb_pipeline_data_handle Kombyne::addPipelineData(kb_ugrid_handle ug)
   error = kb_pipeline_data_add(hpd, domain, ndomains, m_timestep, time, hmesh);
   KB_CHECK_STATUS(error, "Could not add pipeline data");
 
+#define KOMBYNE_1_1
 #ifdef KOMBYNE_1_1
   int32_t promises = KB_PROMISE_STATIC_FIELDS; 
 
