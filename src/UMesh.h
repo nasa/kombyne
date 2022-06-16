@@ -69,7 +69,8 @@ class UMesh
     inline void addGhostCells();
     inline void flagGhostNodes();
     inline void flagGhostCells();
-    inline void addBoundaries(std::vector<std::string> families);
+    inline void addBoundaries(std::vector<std::string> families,
+                              std::vector<int64_t> bc_tags);
     inline std::vector<int64_t> boundaryTags(int64_t ntri, int64_t nquad);
     inline void addBoundary(int64_t tag, std::string& family);
 

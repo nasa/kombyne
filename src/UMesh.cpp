@@ -7,6 +7,7 @@
 #include <string>
 #include <sstream>
 #include <algorithm>
+#include <iterator>
 #include <iostream>
 
 #include "UMesh.h"
@@ -35,6 +36,8 @@ UMesh::UMesh(void* prob, void* mesh, void* comm) :
   pancake::Problem problem(prob);
   std::vector<std::string> families;
   problem.value("bc:family", families);
+  std::vector<int64_t> tags;
+  problem.value("bc:tag", tags);
 
 //if( 0 == tinf_iris_rank(comm, &error) ) {
 //  std::vector<std::string>::iterator it;
@@ -46,7 +49,7 @@ UMesh::UMesh(void* prob, void* mesh, void* comm) :
   buildConnectivity();
   flagGhostNodes();
   flagGhostCells();
-  addBoundaries(families);
+  addBoundaries(families, tags);
 }
 
 UMesh::~UMesh()
@@ -212,7 +215,8 @@ void UMesh::flagGhostCells()
   }
 }
 
-void UMesh::addBoundaries(std::vector<std::string> families)
+void UMesh::addBoundaries(std::vector<std::string> families,
+                          std::vector<int64_t> bc_tags)
 {
   int error;
 
@@ -228,8 +232,10 @@ void UMesh::addBoundaries(std::vector<std::string> families)
   std::vector<int64_t>::iterator it;
   std::string family;
   for (it = tags.begin(); it != tags.end(); ++it) {
-    if (0 < *it && *it <= families.size())
-      family = families[*it-1];
+    std::vector<int64_t>::iterator t;
+    t = std::find(bc_tags.begin(), bc_tags.end(), *it);
+    if (t != bc_tags.end())
+      family = families[std::distance(bc_tags.begin(), t)];
     else
       family = std::string("Tag ") + std::to_string(*it);
 
