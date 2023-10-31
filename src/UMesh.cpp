@@ -43,6 +43,9 @@ UMesh::UMesh(void* prob, void* mesh, void* comm) :
 //  std::vector<std::string>::iterator it;
 //  for( it = families.begin(); it != families.end(); ++it )
 //    std::cerr << "Available Boundary: " << *it << std::endl;
+//  std::vector<int64_t>::iterator t;
+//  for( t = tags.begin(); t != tags.end(); ++t )
+//    std::cerr << "Corresponding Boundary Tag: " << *t << std::endl;
 //}
 
   addNodes();
