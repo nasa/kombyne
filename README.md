@@ -1,4 +1,4 @@
-Visualization plugin based on Kombyne :tm: from Intelligent Light :tm:
+Visualization plugin based on Kombyne™ from Intelligent Light™
 
 To configure and build with GNU Autotools, you will have to first bootstrap the raw source after cloning the repository.  This is typically only required after the initial clone.
 
