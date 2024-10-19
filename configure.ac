@@ -13,7 +13,6 @@ AC_CONFIG_SRCDIR([src/tinf_visualizer.cpp])
 #AM_INIT_AUTOMAKE([tar-pax])
 
 AX_CONFIG_PKG_DIR
-AX_BUILD_TOOLS_LOCATION
 AC_CONFIG_MACRO_DIR([m4])
 
 AC_SUBST([ACLOCAL_AMFLAGS], ["-I ./m4 -I ${ax_cv_path_build_tools}/aclocal \${ACLOCAL_FLAGS}"])
