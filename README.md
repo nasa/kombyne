@@ -13,3 +13,12 @@ To configure and build with GNU Autotools, you will have to first bootstrap the 
                --with-mpi=${MPI_ROOT} \
                --with-png=/path/to/libpng/lib
 ```
+
+In order for applications to discover the plugin under Linux, add the
+"lib" sub-directory of the installation path given above to configure as
+"--prefix" to your environment library search path (environment variable
+$LD_LIBRARY_PATH under Linux).
+
+Instruct your simulation software to use the Kombyne plugin for
+visualization and create the necessary input files to define your
+rendering pipelines according to the Kombyne documentation.
